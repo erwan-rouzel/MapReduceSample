@@ -45,9 +45,4 @@ public class TestMapper extends Mapper<LongWritable, Text, Text, FloatWritable> 
         // En principe il faudrait mettre ici la configuration :
         //context.getConfiguration().getInt("");
     }
-
-    @Override
-    protected void cleanup(Context context) throws IOException, InterruptedException {
-        super.cleanup(context);
-    }
 }

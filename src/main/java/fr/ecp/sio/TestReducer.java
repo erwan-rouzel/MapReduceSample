@@ -1,31 +1,48 @@
 package fr.ecp.sio;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by erwanrouzel on 26/02/2016.
  */
-public class TestReducer extends Reducer<Text, FloatWritable, Text, FloatWritable> {
-    public TestReducer() {
+public class TestMapper2 extends Mapper<LongWritable, Text, Text, FloatWritable> {
+    private final static Splitter SPLITTER = Splitter.on(";").omitEmptyStrings().trimResults();
+    private final Text key = new Text();
+    private final FloatWritable value = new FloatWritable();
+
+    public TestMapper2() {
         super();
     }
 
     @Override
-    protected void reduce(Text key, Iterable<FloatWritable> values, Context context) throws IOException, InterruptedException {
-        long numberOfOccurences = 0;
-        float total = 0.0f;
-        for(FloatWritable value: values) {
-            total += value.get();
-            numberOfOccurences++;
+    protected void map(LongWritable offset, Text line, Context context) throws IOException, InterruptedException {
+        /*  Mettre toutes les variables en final est une bonne pratique. Cela évite que le Garbage Collector tourne
+            en arrière plan.
+         */
+        final List<String> tokens = Lists.newArrayList(SPLITTER.split(line.toString()));
+
+        try {
+            final Float temperature = Float.valueOf(tokens.get(9));
+            key.set(tokens.get(0));
+            value.set(temperature);
+            context.write(key, value);
+        } catch (NumberFormatException e) {
+            context.getCounter("PARSING", "Temperature Error").increment(1);
         }
+    }
 
-        Float average = total / numberOfOccurences;
-
-        context.write(key, new FloatWritable(average));
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+        // En principe il faudrait mettre ici la configuration :
+        //context.getConfiguration().getInt("");
     }
 }
