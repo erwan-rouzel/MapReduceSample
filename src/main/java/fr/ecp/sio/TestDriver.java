@@ -3,6 +3,9 @@ package fr.ecp.sio;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -41,6 +44,13 @@ public class TestDriver extends Configured implements Tool {
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         job.setMapperClass(TestMapper.class);
+        job.setReducerClass(TestReducer.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(FloatWritable.class);
+
+        // Pour notre cas ici, on a 288 clés différentes (toutes les 5 min sur une journée)
+        // Si on met N reducer, cela aurait pour conséquence de créer N fichier
+        job.setNumReduceTasks(1);
 
         job.submit();
         int exitCode = job.waitForCompletion(true)?0:1;
